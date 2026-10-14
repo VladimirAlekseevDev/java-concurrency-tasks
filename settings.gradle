@@ -1,0 +1,10 @@
+rootProject.name = 'java-concurrency-tasks'
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+    }
+}
+
+include 'task-01'
