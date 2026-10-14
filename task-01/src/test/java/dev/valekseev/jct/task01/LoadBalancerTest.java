@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -31,20 +32,13 @@ public class LoadBalancerTest {
     @ParameterizedTest
     @MethodSource("provideValidAddresses")
     void whenRegisterUpToMaxValidAndUniqueAddresses_thenRegisterAllSuccessfully(List<String> testAddresses) {
-        for (String testAddress : testAddresses) {
-            boolean registered = loadBalancer.register(testAddress);
-            assertTrue(registered);
-        }
-
-        List<String> actualAddresses = loadBalancer.getInstances();
-        assertEquals(testAddresses.size(), actualAddresses.size());
-        assertTrue(actualAddresses.containsAll(testAddresses));
+        addToRegistryAndVerify(testAddresses);
     }
 
     static Stream<List<String>> provideValidAddresses() {
         return Stream.of(
                 List.of("a"),
-                List.of("a", "b", "c"),
+                List.of("a \n", "\t  b", "  \nc  \t"),
                 List.of(
                     "a", "A",
                     "ab", "AB",
@@ -55,13 +49,17 @@ public class LoadBalancerTest {
         );
     }
 
+    @Test
+    void whenNoAddressesRegistered_thenReturnEmptyListByGetInstances() {
+        List<String> actualAddresses = loadBalancer.getInstances();
+        assertNotNull(actualAddresses);
+        assertTrue(actualAddresses.isEmpty());
+    }
+
     @ParameterizedTest
     @MethodSource("provideValidAddressesAndOneDuplicate")
     void whenTryingToRegisterDuplicateAddress_thenReturnFalse(List<String> testAddresses, String duplicateAddress) {
-        for (String testAddress : testAddresses) {
-            boolean registered = loadBalancer.register(testAddress);
-            assertTrue(registered);
-        }
+        addToRegistryAndVerify(testAddresses);
 
         boolean duplicateRegistered = loadBalancer.register(duplicateAddress);
         assertFalse(duplicateRegistered);
@@ -74,8 +72,20 @@ public class LoadBalancerTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    void whenTryingToRegisterNullOrEmptyAddress_thenThrowsIllegalStateExc(String emptyAdress) {
-        assertThrows(IllegalStateException.class, () -> loadBalancer.register(emptyAdress));
+    void whenTryingToRegisterNullOrEmptyAddress_thenDontAddToRegistryAndThrowIllegalArgExc(String emptyAdress) {
+        assertThrows(IllegalArgumentException.class, () -> loadBalancer.register(emptyAdress));
+        List<String> addressesAfter = loadBalancer.getInstances();
+        assertTrue(addressesAfter.isEmpty());
+    }
+
+    @Test
+    void whenTryingToRegisterAddressToFullRegistry_thenDontAddToRegistryAndThrowIllegalStateExc() {
+        List<String> testAddresses = List.of("a", "A", "ab", "AB", "aB", "Ba", ".a", "a.", "1a", "1A");
+        addToRegistryAndVerify(testAddresses);
+
+        assertThrows(IllegalStateException.class, () -> loadBalancer.register("!"));
+        List<String> addressesAfter = loadBalancer.getInstances();
+        assertTrue(addressesAfter.containsAll(testAddresses));
     }
 
     static Stream<Arguments> provideValidAddressesAndOneDuplicate() {
@@ -84,6 +94,17 @@ public class LoadBalancerTest {
           Arguments.of(List.of("a", "b", "c"), "b"),
           Arguments.of(List.of("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"), "0")
         );
+    }
+
+    private void addToRegistryAndVerify(List<String> testAddresses) {
+        for (String testAddress : testAddresses) {
+            boolean registered = loadBalancer.register(testAddress);
+            assertTrue(registered);
+        }
+
+        List<String> actualAddresses = loadBalancer.getInstances();
+        assertEquals(testAddresses.size(), actualAddresses.size());
+        assertTrue(actualAddresses.containsAll(testAddresses));
     }
 
 }
