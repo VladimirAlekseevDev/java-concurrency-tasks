@@ -1,7 +1,3 @@
-plugins {
-    id 'base'
-}
-
 subprojects {
     apply plugin: 'java'
 
