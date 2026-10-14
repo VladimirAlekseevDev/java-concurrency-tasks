@@ -4,7 +4,7 @@ Small Java concurrency challenges. Each Gradle module contains one task, its sol
 
 ## Stack
 
-- Java 25 LTS
+- Java 25
 - Gradle 9.8.0 (Wrapper included)
 - JUnit Jupiter and Mockito for testing (versions in `gradle.properties`)
 
@@ -15,7 +15,7 @@ Solutions use only the Java standard library.
 ```text
 ├── build.gradle          # Shared Java and test configuration
 ├── settings.gradle       # Module registration
-└── task-01/
+└── task-**/
     ├── README.md         # Task description
     ├── build.gradle
     └── src/
@@ -25,12 +25,10 @@ Solutions use only the Java standard library.
 
 ## Run
 
-Install JDK 25 and set `JAVA_HOME` to its installation directory. The Gradle Wrapper downloads Gradle automatically.
-
 ```powershell
 .\gradlew.bat build          # Build and test all modules
 .\gradlew.bat test           # Run all tests
-.\gradlew.bat :task-01:test   # Run one module's tests
+.\gradlew.bat :task-01:test  # Run one module's tests
 ```
 
 On Linux/macOS, use `./gradlew` instead of `.\gradlew.bat` (run `chmod +x gradlew` if needed).

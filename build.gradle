@@ -2,15 +2,12 @@ plugins {
     id 'base'
 }
 
-def junitVersion = providers.gradleProperty('junitVersion').get()
-def mockitoVersion = providers.gradleProperty('mockitoVersion').get()
-
 subprojects {
     apply plugin: 'java'
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(25)
+            languageVersion = JavaLanguageVersion.of(javaVersion.toInteger())
         }
     }
 
