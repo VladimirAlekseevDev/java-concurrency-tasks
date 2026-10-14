@@ -2,8 +2,8 @@ plugins {
     id 'base'
 }
 
-def junitVersion = '6.1.3'
-def mockitoVersion = '5.24.0'
+def junitVersion = providers.gradleProperty('junitVersion').get()
+def mockitoVersion = providers.gradleProperty('mockitoVersion').get()
 
 subprojects {
     apply plugin: 'java'

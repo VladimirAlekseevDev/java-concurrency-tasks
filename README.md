@@ -5,8 +5,8 @@ Small Java concurrency challenges. Each Gradle module contains one task, its sol
 ## Stack
 
 - Java 25 LTS
-- Gradle 9.7.1 (Wrapper included)
-- JUnit Jupiter 6.1.3 and Mockito 5.24.0 for testing
+- Gradle 9.8.0 (Wrapper included)
+- JUnit Jupiter and Mockito for testing (versions in `gradle.properties`)
 
 Solutions use only the Java standard library.
 

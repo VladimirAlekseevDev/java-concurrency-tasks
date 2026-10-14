@@ -1,9 +1,9 @@
 # Task 01
 
-Первый модуль для задачи по многопоточности. Условие, решение и тесты будут добавлены при работе над задачей.
+The first Java concurrency task. The problem statement, solution, and tests will be added as work progresses.
 
-## Решение
+## Solution
 
-Код решения размещается в `src/main/java`, например в пакете `concurrency.task01`.
+Place the solution in `src/main/java`, for example in the `concurrency.task01` package.
 
-TODO: описать выбранный подход и используемые механизмы синхронизации.
+TODO: describe the approach and synchronization mechanisms used.
