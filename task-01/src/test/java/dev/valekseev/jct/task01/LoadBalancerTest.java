@@ -108,15 +108,21 @@ public class LoadBalancerTest {
     @Test
     void whenRegisterToSeparateLoadBalancers_thenTheyShouldHaveSeparateRegistries() {
         LoadBalancer secondLoadBalancer = new LoadBalancer();
-        List<String> mainLoaderTestAddresses = List.of("1", "2", "3");
-        List<String> secondLoaderTestAddresses = List.of("a", "A", "ab");
+        List<String> mainTestAddresses = List.of("1", "2", "3");
+        List<String> secondTestAddresses = List.of("a", "A", "ab");
 
-        addToRegistryAndVerify(mainLoaderTestAddresses);
+        mainTestAddresses.forEach(loadBalancer::register);
         assertTrue(secondLoadBalancer.getInstances().isEmpty());
 
-        secondLoadBalancer.register("1");
-        secondLoadBalancer.register("2");
-        secondLoadBalancer.register("3");
+        secondTestAddresses.forEach(secondLoadBalancer::register);
+
+        List<String> mainActualAddresses = loadBalancer.getInstances();
+        assertEquals(mainTestAddresses.size(), mainActualAddresses.size());
+        assertTrue(mainTestAddresses.containsAll(mainActualAddresses));
+
+        List<String> secondActualAddresses = secondLoadBalancer.getInstances();
+        assertEquals(secondTestAddresses.size(), secondActualAddresses.size());
+        assertTrue(secondTestAddresses.containsAll(secondActualAddresses));
     }
 
     private void addToRegistryAndVerify(List<String> testAddresses) {
