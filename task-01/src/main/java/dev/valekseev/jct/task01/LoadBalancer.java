@@ -1,7 +1,6 @@
 package dev.valekseev.jct.task01;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class LoadBalancer {
@@ -23,12 +22,24 @@ public class LoadBalancer {
     }
 
     public boolean register(String address) {
+        if (address == null || address.isBlank()) {
+            throw new IllegalArgumentException();
+        }
 
-        return false;
+        if (registry.contains(address)) {
+            return false;
+        }
+
+        if (registry.size() == maxCapacity) {
+            throw new IllegalStateException();
+        }
+
+        registry.add(address);
+        return true;
     }
 
     public List<String> getInstances() {
-        return Collections.unmodifiableList(registry);
+        return List.copyOf(registry);
     }
 
 }

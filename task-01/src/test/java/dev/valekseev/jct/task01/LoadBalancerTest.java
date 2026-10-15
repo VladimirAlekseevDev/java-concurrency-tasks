@@ -20,8 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class LoadBalancerTest {
 
-    private static final int MAX_ADDRESSES = 10;
-
     private LoadBalancer loadBalancer;
 
     @BeforeEach
