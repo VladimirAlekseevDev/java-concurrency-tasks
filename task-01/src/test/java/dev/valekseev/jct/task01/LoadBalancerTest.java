@@ -39,13 +39,7 @@ public class LoadBalancerTest {
         return Stream.of(
                 List.of("a"),
                 List.of("a \n", "\t  b", "  \nc  \t"),
-                List.of(
-                    "a", "A",
-                    "ab", "AB",
-                    "aB", "Ba",
-                    ".a", "a.",
-                    "1a", "1A"
-                )
+                List.of("a", "A", "ab", "AB", "aB", "Ba", ".a", "a.", "1a", "1A")
         );
     }
 
@@ -94,6 +88,11 @@ public class LoadBalancerTest {
         assertThrows(IllegalStateException.class, () -> loadBalancer.register("!"));
         List<String> addressesAfter = loadBalancer.getInstances();
         assertTrue(addressesAfter.containsAll(testAddresses));
+    }
+
+    @Test
+    void whenGetInstancesAndAfterRegister_thenNoChangesInReceivedListOfAddresses() {
+        List<String> testAddresses = List.of("a", "A", "ab");
     }
 
     private void addToRegistryAndVerify(List<String> testAddresses) {
