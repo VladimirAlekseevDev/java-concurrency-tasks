@@ -70,6 +70,14 @@ public class LoadBalancerTest {
         assertTrue(actualAddresses.containsAll(testAddresses));
     }
 
+    static Stream<Arguments> provideValidAddressesAndOneDuplicate() {
+        return Stream.of(
+                Arguments.of(List.of("a"), "a"),
+                Arguments.of(List.of("a", "b", "c"), "b"),
+                Arguments.of(List.of("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"), "0")
+        );
+    }
+
     @ParameterizedTest
     @NullAndEmptySource
     void whenTryingToRegisterNullOrEmptyAddress_thenDontAddToRegistryAndThrowIllegalArgExc(String emptyAdress) {
@@ -86,14 +94,6 @@ public class LoadBalancerTest {
         assertThrows(IllegalStateException.class, () -> loadBalancer.register("!"));
         List<String> addressesAfter = loadBalancer.getInstances();
         assertTrue(addressesAfter.containsAll(testAddresses));
-    }
-
-    static Stream<Arguments> provideValidAddressesAndOneDuplicate() {
-        return Stream.of(
-          Arguments.of(List.of("a"), "a"),
-          Arguments.of(List.of("a", "b", "c"), "b"),
-          Arguments.of(List.of("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"), "0")
-        );
     }
 
     private void addToRegistryAndVerify(List<String> testAddresses) {
