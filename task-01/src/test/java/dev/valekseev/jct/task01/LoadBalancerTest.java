@@ -91,8 +91,18 @@ public class LoadBalancerTest {
     }
 
     @Test
-    void whenGetInstancesAndAfterRegister_thenNoChangesInReceivedListOfAddresses() {
+    void whenGetInstancesAndAfterRegister_thenNoChangesInAlreadyReceivedListOfAddresses() {
         List<String> testAddresses = List.of("a", "A", "ab");
+        addToRegistryAndVerify(testAddresses);
+
+        List<String> actualAddresses = loadBalancer.getInstances();
+
+        loadBalancer.register("1!");
+        loadBalancer.register("2!");
+        loadBalancer.register("3!");
+
+        assertEquals(testAddresses.size(), actualAddresses.size());
+        assertTrue(actualAddresses.containsAll(testAddresses));
     }
 
     private void addToRegistryAndVerify(List<String> testAddresses) {
