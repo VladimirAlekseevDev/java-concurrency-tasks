@@ -2,6 +2,7 @@ package dev.valekseev.jct.task01;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class LoadBalancer {
 
@@ -9,6 +10,7 @@ public class LoadBalancer {
 
     private final List<String> registry = new ArrayList<>();
     private final int maxCapacity;
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public LoadBalancer() {
         this(DEFAULT_MAX_CAPACITY);
@@ -21,25 +23,37 @@ public class LoadBalancer {
         this.maxCapacity = maxCapacity;
     }
 
-    public synchronized boolean register(String address) {
+    public boolean register(String address) {
         if (address == null || address.isBlank()) {
             throw new IllegalArgumentException("Address must not be null or blank");
         }
 
-        if (registry.contains(address)) {
-            return false;
-        }
+        ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+        try {
+            writeLock.lock();
+            if (registry.contains(address)) {
+                return false;
+            }
 
-        if (registry.size() >= maxCapacity) {
-            throw new IllegalStateException("Registry capacity of " + maxCapacity + " has been reached");
-        }
+            if (registry.size() >= maxCapacity) {
+                throw new IllegalStateException("Registry capacity of " + maxCapacity + " has been reached");
+            }
 
-        registry.add(address);
-        return true;
+            registry.add(address);
+            return true;
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     public synchronized List<String> getInstances() {
-        return List.copyOf(registry);
+        ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+        try {
+            readLock.lock();
+            return List.copyOf(registry);
+        } finally {
+            readLock.unlock();
+        }
     }
 
 }
