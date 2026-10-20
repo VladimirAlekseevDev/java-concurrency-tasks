@@ -4,15 +4,16 @@ Build a small, thread-safe in-memory load balancer as a reusable Java component.
 
 ## Stage 1: Instance registration
 
-Implement `LoadBalancer` in the `concurrency.task01` package with this public API:
+Implement `LoadBalancer` in the `dev.valekseev.jct.task01` package with this public API:
 
 ```java
 public LoadBalancer();
+public LoadBalancer(int maxCapacity);
 public boolean register(String address);
 public List<String> getInstances();
 ```
 
-The registry starts empty and holds at most **10 unique backend addresses**.
+The default registry starts empty and holds at most **10 unique backend addresses**. The optional constructor accepts a custom positive capacity; zero or negative capacity throws `IllegalArgumentException`.
 
 ### Behaviour
 

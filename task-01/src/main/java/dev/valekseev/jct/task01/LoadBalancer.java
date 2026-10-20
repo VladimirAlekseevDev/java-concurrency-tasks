@@ -16,29 +16,29 @@ public class LoadBalancer {
 
     public LoadBalancer(int maxCapacity) {
         if (maxCapacity <= 0) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Capacity must be greater than zero");
         }
         this.maxCapacity = maxCapacity;
     }
 
-    public boolean register(String address) {
+    public synchronized boolean register(String address) {
         if (address == null || address.isBlank()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Address must not be null or blank");
         }
 
         if (registry.contains(address)) {
             return false;
         }
 
-        if (registry.size() == maxCapacity) {
-            throw new IllegalStateException();
+        if (registry.size() >= maxCapacity) {
+            throw new IllegalStateException("Registry capacity of " + maxCapacity + " has been reached");
         }
 
         registry.add(address);
         return true;
     }
 
-    public List<String> getInstances() {
+    public synchronized List<String> getInstances() {
         return List.copyOf(registry);
     }
 
