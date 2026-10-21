@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -299,28 +298,22 @@ class LoadBalancerTest {
     private static <T> List<T> runConcurrently(List<Callable<T>> tasks)
             throws InterruptedException, ExecutionException, TimeoutException {
         ExecutorService executor = Executors.newFixedThreadPool(tasks.size());
-        CountDownLatch ready = new CountDownLatch(tasks.size());
-        CountDownLatch start = new CountDownLatch(1);
+        CyclicBarrier start = new CyclicBarrier(tasks.size());
         List<Future<T>> futures = new ArrayList<>();
 
         try {
             for (Callable<T> task : tasks) {
                 futures.add(executor.submit(() -> {
-                    ready.countDown();
-                    assertTrue(start.await(5, SECONDS), "Workers must receive the start signal");
+                    start.await(5, SECONDS);
                     return task.call();
                 }));
             }
-            assertTrue(ready.await(5, SECONDS), "All workers must be ready");
-            start.countDown();
-
             List<T> results = new ArrayList<>();
             for (Future<T> future : futures) {
                 results.add(future.get(5, SECONDS));
             }
             return results;
         } finally {
-            start.countDown();
             executor.shutdownNow();
             assertTrue(executor.awaitTermination(5, SECONDS), "Executor must terminate");
         }
