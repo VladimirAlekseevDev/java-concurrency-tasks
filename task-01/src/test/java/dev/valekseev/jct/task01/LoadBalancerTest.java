@@ -43,7 +43,7 @@ class LoadBalancerTest {
         List<String> snapshot = loadBalancer.getInstances();
 
         assertTrue(snapshot.isEmpty());
-        assertThrows(UnsupportedOperationException.class, () -> snapshot.add("backend"));
+        assertThrows(UnsupportedOperationException.class, () -> snapshot.add("a"));
         assertTrue(loadBalancer.getInstances().isEmpty());
     }
 

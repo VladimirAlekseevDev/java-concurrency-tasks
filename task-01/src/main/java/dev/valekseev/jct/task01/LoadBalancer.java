@@ -29,8 +29,8 @@ public class LoadBalancer {
         }
 
         ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+        writeLock.lock();
         try {
-            writeLock.lock();
             if (registry.contains(address)) {
                 return false;
             }
@@ -46,10 +46,10 @@ public class LoadBalancer {
         }
     }
 
-    public synchronized List<String> getInstances() {
+    public List<String> getInstances() {
         ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+        readLock.lock();
         try {
-            readLock.lock();
             return List.copyOf(registry);
         } finally {
             readLock.unlock();
