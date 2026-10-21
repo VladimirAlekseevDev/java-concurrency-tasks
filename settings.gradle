@@ -8,3 +8,4 @@ dependencyResolutionManagement {
 }
 
 include 'task-01'
+include 'task-02'

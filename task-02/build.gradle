@@ -1,0 +1,3 @@
+description = 'Task 02: Thread-safe money transfers'
+
+// Java, JUnit and Mockito are configured in the root build.gradle.
