@@ -4,11 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 public class TransferService {
 
     private Map<String, Long> balances;
-    private ReentrantReadWriteLock readWriteLock;
+    private ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     public TransferService(Map<String, Long> balances) {
         if (balances == null) {
@@ -27,22 +29,34 @@ public class TransferService {
         validateAccountId(to);
         validateTransferAmount(amount);
 
-        long fromAccountBalance = getAccountBalanceOrThrow(from);
-        long toAccountBalance = getAccountBalanceOrThrow(to);
+        WriteLock writeLock = readWriteLock.writeLock();
+        writeLock.lock();
+        try {
+            long fromAccountBalance = getAccountBalanceOrThrow(from);
+            long toAccountBalance = getAccountBalanceOrThrow(to);
 
-        if (fromAccountBalance - amount < 0) {
-            throw new IllegalStateException();
-        }
-        if (Long.MAX_VALUE - toAccountBalance < fromAccountBalance) {
-            throw new ArithmeticException();
-        }
+            if (fromAccountBalance - amount < 0) {
+                throw new IllegalStateException();
+            }
+            if (Long.MAX_VALUE - toAccountBalance < fromAccountBalance) {
+                throw new ArithmeticException();
+            }
 
-        balances.replace(from, fromAccountBalance - amount);
-        balances.replace(to, toAccountBalance + amount);
+            balances.replace(from, fromAccountBalance - amount);
+            balances.replace(to, toAccountBalance + amount);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     public Map<String, Long> getBalances() {
-        return Map.copyOf(balances);
+        ReadLock readLock = readWriteLock.readLock();
+        readLock.lock();
+        try {
+            return Map.copyOf(balances);
+        } finally {
+            readLock.unlock();
+        }
     }
 
     private void validateAccountId(String accountId) {
