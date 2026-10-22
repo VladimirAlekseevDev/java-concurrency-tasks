@@ -1,12 +1,24 @@
 package dev.valekseev.jct.task02;
 
 import static java.util.Collections.emptyMap;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -144,12 +156,54 @@ public class TransferServiceTest {
 
     @Test
     void whenConcurrentTransfers_shouldNotLoseUpdate() {
+        transferService = new TransferService(Map.of("1", 100L, "2", 0L));
+        List<Runnable> transferTasks = IntStream.range(0, 20)
+                .mapToObj(i -> (Runnable) () -> transferService.transfer("1", "2", 5L))
+                .toList();
 
+        assertDoesNotThrow(() -> runConcurrently(transferTasks));
+
+        Map<String, Long> balances = transferService.getBalances();
+        assertEquals(Map.of("1", 0L, "2", 100L), balances);
     }
 
     @Test
     void whenConcurrentTransfers_shouldNotOverdraw() {
+        transferService = new TransferService(Map.of("1", 100L, "2", 0L));
+        List<Runnable> transferTasks = IntStream.range(0, 21)
+                .mapToObj(i -> (Runnable) () -> transferService.transfer("1", "2", 5L))
+                .toList();
 
+        assertThrows(() -> runConcurrently(transferTasks));
+
+        Map<String, Long> balances = transferService.getBalances();
+        assertEquals(Map.of("1", 0L, "2", 100L), balances);
+    }
+
+    private void runConcurrently(List<Runnable> transferTasks) {
+        try (ExecutorService executor = Executors.newFixedThreadPool(transferTasks.size())) {
+            CyclicBarrier start = new CyclicBarrier(transferTasks.size());
+            List<Future<?>> futures = new ArrayList<>();
+
+            for (Runnable task : transferTasks) {
+                Future<?> future = executor.submit(() -> {
+                    try {
+                        start.await(5, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    task.run();
+                });
+                futures.add(future);
+            }
+            for (Future<?> future : futures) {
+                try {
+                    future.get(5, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
 }
