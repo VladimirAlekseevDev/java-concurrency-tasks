@@ -114,8 +114,9 @@ public class TransferServiceTest {
             Arguments.of("1", null, 1L),
             Arguments.of("1", " ", 1L),
             Arguments.of("1", "\n", 1L),
-            Arguments.of("1", "1", null),
-            Arguments.of("1", "1", -1)
+            Arguments.of("1", "1", -50),
+            Arguments.of("1", "1", -1),
+            Arguments.of("1", "1", 0)
         );
     }
 
@@ -170,11 +171,12 @@ public class TransferServiceTest {
     @Test
     void whenConcurrentTransfers_shouldNotOverdraw() {
         transferService = new TransferService(Map.of("1", 100L, "2", 0L));
-        List<Runnable> transferTasks = IntStream.range(0, 21)
+        List<Runnable> transferTasks = IntStream.range(0, 30)
                 .mapToObj(i -> (Runnable) () -> transferService.transfer("1", "2", 5L))
                 .toList();
 
-        assertThrows(() -> runConcurrently(transferTasks));
+        // TODO
+        assertThrows(IllegalStateException.class, () -> runConcurrently(transferTasks));
 
         Map<String, Long> balances = transferService.getBalances();
         assertEquals(Map.of("1", 0L, "2", 100L), balances);
