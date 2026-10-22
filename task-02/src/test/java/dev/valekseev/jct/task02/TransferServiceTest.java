@@ -125,9 +125,21 @@ public class TransferServiceTest {
         assertThrows(IllegalStateException.class, () -> transferService.transfer("2", "1", 4L));
     }
 
-    @Test
-    void whenTransferWithBalanceOverflow_shouldThrowArithmeticExc() {
+    @ParameterizedTest
+    @MethodSource("getArgsForTransferWithOverflow")
+    void whenTransferWithBalanceOverflow_shouldThrowArithmeticExc(Long fromBalance, Long toBalance, Long amount) {
+        transferService = new TransferService(Map.of("1", fromBalance, "2", toBalance));
+        assertThrows(ArithmeticException.class, () -> transferService.transfer("1", "2", amount));
+    }
 
+    private static Stream<Arguments> getArgsForTransferWithOverflow() {
+        return Stream.of(
+            Arguments.of(Long.MAX_VALUE, 1L, Long.MAX_VALUE),
+            Arguments.of(Long.MAX_VALUE, 100L, Long.MAX_VALUE),
+            Arguments.of(1L, Long.MAX_VALUE, 1L),
+            Arguments.of(100L, Long.MAX_VALUE, 100L),
+            Arguments.of(Long.MAX_VALUE-10, 0L, 11L)
+        );
     }
 
     @Test
