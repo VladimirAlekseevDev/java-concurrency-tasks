@@ -1,6 +1,6 @@
 # Task 02 — Money Transfers
 
-Implement a thread-safe in-memory `TransferService` initialised with account balances.
+Implement a thread-safe in-memory `TransferService` initialised with account balances. A null input map throws `IllegalArgumentException`; an empty map is allowed.
 
 - Use non-negative `long` balances in integer minor units. Account IDs are non-blank, exact, case-sensitive strings. Copy the input map; accounts are fixed and instances independent.
 - `transfer(from, to, amount)` moves a positive amount between two distinct existing accounts.
