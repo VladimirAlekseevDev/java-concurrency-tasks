@@ -36,6 +36,9 @@ public class TransferService {
         if (Long.MAX_VALUE - toAccountBalance < fromAccountBalance) {
             throw new ArithmeticException();
         }
+
+        balances.replace(from, fromAccountBalance - amount);
+        balances.replace(to, toAccountBalance + amount);
     }
 
     public Map<String, Long> getBalances() {

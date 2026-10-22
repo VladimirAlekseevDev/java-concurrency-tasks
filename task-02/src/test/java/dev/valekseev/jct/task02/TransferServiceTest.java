@@ -151,7 +151,8 @@ public class TransferServiceTest {
             Arguments.of(Long.MAX_VALUE, 100L, Long.MAX_VALUE),
             Arguments.of(1L, Long.MAX_VALUE, 1L),
             Arguments.of(100L, Long.MAX_VALUE, 100L),
-            Arguments.of(Long.MAX_VALUE-10, 0L, 11L)
+            Arguments.of(Long.MAX_VALUE-10, 0L, 11L),
+            Arguments.of(Long.MAX_VALUE / 2 + 2, Long.MAX_VALUE / 2, Long.MAX_VALUE / 2 + 2)
         );
     }
 
