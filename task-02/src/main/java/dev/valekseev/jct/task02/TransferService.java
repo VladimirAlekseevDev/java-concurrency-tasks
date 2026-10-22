@@ -1,11 +1,22 @@
 package dev.valekseev.jct.task02;
 
+import java.util.HashMap;
 import java.util.Map;
 
-public interface TransferService {
+public class TransferService {
 
-    void transfer(String from, String to, long amount);
+    private Map<String, Long> balances;
 
-    Map<String, Long> getBalances();
+    public TransferService(Map<String, Long> balances) {
+        this.balances = new HashMap<>(balances);
+    }
+
+    public void transfer(String from, String to, long amount) {
+
+    }
+
+    public Map<String, Long> getBalances() {
+        return Map.of();
+    }
 
 }
