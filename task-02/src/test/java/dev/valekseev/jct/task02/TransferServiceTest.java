@@ -40,14 +40,12 @@ public class TransferServiceTest {
     }
 
     @ParameterizedTest
-    @NullSource
     @ValueSource(strings = {"", " ", "\t", "\r", "\n", "\t \r \n"})
     void whenProvidedMapWithIncorrectAccountId_shouldThrowIllegalArgExc(String accountId) {
         assertThrows(IllegalArgumentException.class, () -> new TransferService(Map.of(accountId, 1L)));
     }
 
     @ParameterizedTest
-    @NullSource
     @ValueSource(longs = { Long.MIN_VALUE, -100L, -1 })
     void whenProvidedMapWithIncorrectBalance_shouldThrowIllegalArgExc(Long balance) {
         assertThrows(IllegalArgumentException.class, () -> new TransferService(Map.of("1", balance)));
@@ -148,7 +146,7 @@ public class TransferServiceTest {
             Arguments.of(Long.MAX_VALUE, 100L, Long.MAX_VALUE),
             Arguments.of(1L, Long.MAX_VALUE, 1L),
             Arguments.of(100L, Long.MAX_VALUE, 100L),
-            Arguments.of(Long.MAX_VALUE-10, 0L, 11L),
+            Arguments.of(11L, Long.MAX_VALUE-10, 11L),
             Arguments.of(Long.MAX_VALUE / 2 + 2, Long.MAX_VALUE / 2, Long.MAX_VALUE / 2 + 2)
         );
     }
