@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -39,6 +40,22 @@ public class TransferServiceTest {
         assertThrows(IllegalArgumentException.class, () -> new TransferService(null));
     }
 
+    @Test
+    void whenProvidedMapWithNullAccountId_shouldThrowIllegalArgExc() {
+        Map<String, Long> initialBalances = new HashMap<>();
+        initialBalances.put(null, 1L);
+
+        assertThrows(IllegalArgumentException.class, () -> new TransferService(initialBalances));
+    }
+
+    @Test
+    void whenProvidedMapWithNullBalance_shouldThrowIllegalArgExc() {
+        Map<String, Long> initialBalances = new HashMap<>();
+        initialBalances.put("1", null);
+
+        assertThrows(IllegalArgumentException.class, () -> new TransferService(initialBalances));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"", " ", "\t", "\r", "\n", "\t \r \n"})
     void whenProvidedMapWithIncorrectAccountId_shouldThrowIllegalArgExc(String accountId) {
@@ -62,20 +79,28 @@ public class TransferServiceTest {
     }
 
     @Test
-    void whenProvidedNotEmptyMap_shouldReturnItsCopyByGetBalances() {
-        Map<String, Long> initialBalances = Map.of(
-                "1", 1L,
-                "2", 2L,
-                "3", 3L
-        );
+    void whenInputMapChanges_shouldKeepInitialBalances() {
+        Map<String, Long> expectedBalances = Map.of("1", 100L, "2", 20L);
+        Map<String, Long> initialBalances = new HashMap<>(expectedBalances);
         transferService = new TransferService(initialBalances);
 
-        Map<String, Long> balances = transferService.getBalances();
-        assertEquals(initialBalances, balances);
-        assertNotSame(initialBalances, balances);
+        initialBalances.put("1", 999L);
+        initialBalances.remove("2");
+        initialBalances.put("3", 30L);
 
-        transferService.transfer("1", "2", 1L);
-        assertEquals(initialBalances, balances);
+        assertEquals(expectedBalances, transferService.getBalances());
+    }
+
+    @Test
+    void whenTransferSucceeds_shouldNotModifyInputMap() {
+        Map<String, Long> expectedInitialBalances = Map.of("1", 100L, "2", 20L);
+        Map<String, Long> initialBalances = new HashMap<>(expectedInitialBalances);
+        transferService = new TransferService(initialBalances);
+
+        transferService.transfer("1", "2", 30L);
+
+        assertEquals(expectedInitialBalances, initialBalances);
+        assertEquals(Map.of("1", 70L, "2", 50L), transferService.getBalances());
     }
 
     @Test
@@ -86,19 +111,48 @@ public class TransferServiceTest {
         );
         transferService = new TransferService(initialBalances);
 
-        Map<String, Long> balances = transferService.getBalances();
-        assertEquals(initialBalances, balances);
-        assertNotSame(initialBalances, balances);
+        Map<String, Long> balancesSnapshot = transferService.getBalances();
+        assertEquals(initialBalances, balancesSnapshot);
+        assertNotSame(initialBalances, balancesSnapshot);
 
         transferService.transfer("1", "2", 1L);
-        assertEquals(initialBalances, balances);
+        assertEquals(initialBalances, balancesSnapshot);
+
+        assertThrows(UnsupportedOperationException.class, () -> balancesSnapshot.put("3", 3L));
+        assertThrows(UnsupportedOperationException.class, () -> balancesSnapshot.remove("2"));
+        assertThrows(UnsupportedOperationException.class, () -> balancesSnapshot.replace("2", 5L));
+    }
+
+    @ParameterizedTest(name = "[{index}] from={0}, to={1}, amount={2}")
+    @MethodSource("getArgsForSuccessfulTransfer")
+    void whenTransferWithValidParams_shouldUpdateBalances(
+            long fromBalance, long toBalance, long amount,
+            long expectedFromBalance, long expectedToBalance) {
+        transferService = new TransferService(Map.of("1", fromBalance, "2", toBalance, "3", 7L));
+
+        transferService.transfer("1", "2", amount);
+
+        assertEquals(Map.of("1", expectedFromBalance, "2", expectedToBalance, "3", 7L),
+                transferService.getBalances());
+    }
+
+    private static Stream<Arguments> getArgsForSuccessfulTransfer() {
+        return Stream.of(
+            Arguments.of(100L, 20L, 30L, 70L, 50L),
+            Arguments.of(100L, 20L, 100L, 0L, 120L),
+            Arguments.of(10L, Long.MAX_VALUE - 10, 10L, 0L, Long.MAX_VALUE),
+            Arguments.of(100L, Long.MAX_VALUE - 10, 5L, 95L, Long.MAX_VALUE - 5)
+        );
     }
 
     @ParameterizedTest
     @MethodSource("getInvalidArgsForTransfer")
     void whenTransferWithInvalidParams_shouldThrowIllegalArgExc(String from, String to, long amount) {
-        transferService = new TransferService(emptyMap());
+        Map<String, Long> initialBalances = Map.of("1", 10L, "2", 20L);
+        transferService = new TransferService(initialBalances);
+
         assertThrows(IllegalArgumentException.class, () -> transferService.transfer(from, to, amount));
+        assertEquals(initialBalances, transferService.getBalances());
     }
 
     private static Stream<Arguments> getInvalidArgsForTransfer() {
@@ -109,9 +163,9 @@ public class TransferServiceTest {
             Arguments.of("1", null, 1L),
             Arguments.of("1", " ", 1L),
             Arguments.of("1", "\n", 1L),
-            Arguments.of("1", "1", -50),
-            Arguments.of("1", "1", -1),
-            Arguments.of("1", "1", 0)
+            Arguments.of("1", "2", -50),
+            Arguments.of("1", "2", -1),
+            Arguments.of("1", "2", 0)
         );
     }
 
@@ -119,25 +173,32 @@ public class TransferServiceTest {
     void whenTransferWithNonExistentAccountIdParam_shouldThrowNoSuchElExc() {
         transferService = new TransferService(emptyMap());
         assertThrows(NoSuchElementException.class, () -> transferService.transfer("1", "2", 3));
+        assertEquals(emptyMap(), transferService.getBalances());
 
-        transferService = new TransferService(Map.of("1", 2L, "2", 3L));
+        Map<String, Long> initialBalances = Map.of("1", 2L, "2", 3L);
+        transferService = new TransferService(initialBalances);
         assertThrows(NoSuchElementException.class, () -> transferService.transfer("1", "3", 3));
         assertThrows(NoSuchElementException.class, () -> transferService.transfer("3", "2", 3));
         assertThrows(NoSuchElementException.class, () -> transferService.transfer("5", "7", 3));
+        assertEquals(initialBalances, transferService.getBalances());
     }
 
     @Test
     void whenTransferWithInsufficientFunds_shouldThrowIllegalStateExc() {
-        transferService = new TransferService(Map.of("1", 2L, "2", 3L));
+        Map<String, Long> initialBalances = Map.of("1", 2L, "2", 3L);
+        transferService = new TransferService(initialBalances);
         assertThrows(IllegalStateException.class, () -> transferService.transfer("1", "2", 3L));
         assertThrows(IllegalStateException.class, () -> transferService.transfer("2", "1", 4L));
+        assertEquals(initialBalances, transferService.getBalances());
     }
 
     @ParameterizedTest
     @MethodSource("getArgsForTransferWithOverflow")
     void whenTransferWithBalanceOverflow_shouldThrowArithmeticExc(Long fromBalance, Long toBalance, Long amount) {
-        transferService = new TransferService(Map.of("1", fromBalance, "2", toBalance));
+        Map<String, Long> initialBalances = Map.of("1", fromBalance, "2", toBalance);
+        transferService = new TransferService(initialBalances);
         assertThrows(ArithmeticException.class, () -> transferService.transfer("1", "2", amount));
+        assertEquals(initialBalances, transferService.getBalances());
     }
 
     private static Stream<Arguments> getArgsForTransferWithOverflow() {
@@ -153,8 +214,11 @@ public class TransferServiceTest {
 
     @Test
     void whenTrasferFromAndToAccountsAreSame_shouldThrowIllegalArgExc() {
-        transferService = new TransferService(Map.of("1", 10L));
+        Map<String, Long> initialBalances = Map.of("1", 10L, "2", 20L);
+        transferService = new TransferService(initialBalances);
         assertThrows(IllegalArgumentException.class, () -> transferService.transfer("1", "1", 1L));
+        assertThrows(IllegalArgumentException.class, () -> transferService.transfer("2", "2", 5L));
+        assertEquals(initialBalances, transferService.getBalances());
     }
 
     @Test
