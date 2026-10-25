@@ -3,6 +3,8 @@ package dev.valekseev.jct.task01;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 public class LoadBalancer {
 
@@ -10,7 +12,10 @@ public class LoadBalancer {
 
     private final List<String> registry = new ArrayList<>();
     private final int maxCapacity;
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private final WriteLock writeLock = readWriteLock.writeLock();
+    private final ReadLock readLock = readWriteLock.readLock();
 
     public LoadBalancer() {
         this(DEFAULT_MAX_CAPACITY);
@@ -28,7 +33,6 @@ public class LoadBalancer {
             throw new IllegalArgumentException("Address must not be null or blank");
         }
 
-        ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
         writeLock.lock();
         try {
             if (registry.contains(address)) {
@@ -47,7 +51,6 @@ public class LoadBalancer {
     }
 
     public List<String> getInstances() {
-        ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
         readLock.lock();
         try {
             return List.copyOf(registry);
