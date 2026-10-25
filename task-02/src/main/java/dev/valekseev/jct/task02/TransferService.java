@@ -3,6 +3,7 @@ package dev.valekseev.jct.task02;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -27,6 +28,7 @@ public class TransferService {
     public void transfer(String from, String to, long amount) {
         validateAccountId(from);
         validateAccountId(to);
+        validateNotTheSameAccountId(from, to);
         validateTransferAmount(amount);
 
         WriteLock writeLock = readWriteLock.writeLock();
@@ -61,6 +63,12 @@ public class TransferService {
 
     private void validateAccountId(String accountId) {
         if (accountId == null || accountId.isBlank()) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private void validateNotTheSameAccountId(String from, String to) {
+        if (Objects.equals(from, to)) {
             throw new IllegalArgumentException();
         }
     }
