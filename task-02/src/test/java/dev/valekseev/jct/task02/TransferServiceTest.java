@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -172,15 +173,26 @@ public class TransferServiceTest {
     @Test
     void whenConcurrentTransfers_shouldNotOverdraw() {
         transferService = new TransferService(Map.of("1", 100L, "2", 0L));
+
+        AtomicInteger successfulTransfers = new AtomicInteger();
+        AtomicInteger rejectedTransfers = new AtomicInteger();
         List<Runnable> transferTasks = IntStream.range(0, 30)
-                .mapToObj(i -> (Runnable) () -> transferService.transfer("1", "2", 5L))
+                .mapToObj(i -> (Runnable) () -> {
+                    try {
+                        transferService.transfer("1", "2", 5L);
+                        successfulTransfers.incrementAndGet();
+                    } catch (IllegalStateException e) {
+                        rejectedTransfers.incrementAndGet();
+                    }
+                })
                 .toList();
 
-        // TODO
-        assertThrows(IllegalStateException.class, () -> runConcurrently(transferTasks));
+        runConcurrently(transferTasks);
 
         Map<String, Long> balances = transferService.getBalances();
         assertEquals(Map.of("1", 0L, "2", 100L), balances);
+        assertEquals(20, successfulTransfers.get());
+        assertEquals(10, rejectedTransfers.get());
     }
 
     private void runConcurrently(List<Runnable> transferTasks) {
