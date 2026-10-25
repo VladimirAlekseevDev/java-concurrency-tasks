@@ -10,8 +10,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 public class TransferService {
 
-    private Map<String, Long> balances;
-    private ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private final Map<String, Long> balances;
+    private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private final WriteLock writeLock = readWriteLock.writeLock();
+    private final ReadLock readLock = readWriteLock.readLock();
 
     public TransferService(Map<String, Long> balances) {
         if (balances == null) {
@@ -31,18 +33,13 @@ public class TransferService {
         validateNotTheSameAccountId(from, to);
         validateTransferAmount(amount);
 
-        WriteLock writeLock = readWriteLock.writeLock();
         writeLock.lock();
         try {
             long fromAccountBalance = getAccountBalanceOrThrow(from);
             long toAccountBalance = getAccountBalanceOrThrow(to);
 
-            if (fromAccountBalance - amount < 0) {
-                throw new IllegalStateException();
-            }
-            if (Long.MAX_VALUE - toAccountBalance < fromAccountBalance) {
-                throw new ArithmeticException();
-            }
+            validateEnoughFunds(fromAccountBalance, amount);
+            validateNoOverflow(toAccountBalance, amount);
 
             balances.replace(from, fromAccountBalance - amount);
             balances.replace(to, toAccountBalance + amount);
@@ -52,7 +49,6 @@ public class TransferService {
     }
 
     public Map<String, Long> getBalances() {
-        ReadLock readLock = readWriteLock.readLock();
         readLock.lock();
         try {
             return Map.copyOf(balances);
@@ -82,6 +78,19 @@ public class TransferService {
     private void validateTransferAmount(long amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException();
+        }
+    }
+
+    private void validateEnoughFunds(long accountBalance, long transferAmount) {
+        if (accountBalance < transferAmount) {
+            throw new IllegalStateException();
+        }
+    }
+
+    private void validateNoOverflow(long toAccountBalance, long amount) {
+        // Also can be implemented as Math.addExact(toAccountBalance, amount);
+        if (Long.MAX_VALUE - toAccountBalance < amount) {
+            throw new ArithmeticException();
         }
     }
 

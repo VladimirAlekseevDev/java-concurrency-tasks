@@ -151,6 +151,12 @@ public class TransferServiceTest {
     }
 
     @Test
+    void whenTrasferFromAndToAccountsAreSame_shouldThrowIllegalArgExc() {
+        transferService = new TransferService(Map.of("1", 10L));
+        assertThrows(IllegalArgumentException.class, () -> transferService.transfer("1", "1", 1L));
+    }
+
+    @Test
     void whenConcurrentTransfers_shouldNotLoseUpdate() {
         transferService = new TransferService(Map.of("1", 100L, "2", 0L));
         List<Runnable> transferTasks = IntStream.range(0, 20)
